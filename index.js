@@ -1,7 +1,6 @@
 const express = require('express');
 const app = express();
 const ejsMate = require('ejs-mate');
-const socket = require('socket.io');
 const path = require('path');
 const http = require('http');
 const { v4: uuidv4 } = require('uuid');
@@ -26,8 +25,13 @@ io.on('connection', (socket) => {
     });
 });
 
+app.get('/socket.io/socket.io.js', (req, res) =>{
+    res.sendFile(__dirname + '/node_modules/socket.io/client-dist/socket.io.js');
+});
+
 app.get('/:roomId', (req, res) => {
     const { roomId } = req.params;
+    console.log(roomId,' is the roomId');
     res.render(`room`, { roomId });
 });
 
