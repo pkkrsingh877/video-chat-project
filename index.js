@@ -1,40 +1,33 @@
-const express = require('express');
-const app = express();
-const ejsMate = require('ejs-mate');
-const socket = require('socket.io');
-const path = require('path');
-const http = require('http');
-const { v4: uuidv4 } = require('uuid');
+const express = require('express')
+const app = express()
+const server = require('http').Server(app)
+const io = require('socket.io')(server)
+const { v4: uuidV4 } = require('uuid')
+const cors = require('cors'); 
+app.use(cors());
 
-app.use(express.static('public'));
-
-//setting up ejs
-app.engine('ejs', ejsMate);
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// Setting up socket.io
-const server = http.createServer(app);
-const { Server } = require("socket.io");
-const io = new Server(server);
-
-io.on('connection', (socket) => {
-    console.log('This is working');
-    socket.on('join-room', (roomId, userId) => {
-        console.log('someone has joined the room');
-        console.log(roomId, userId);
-    });
-});
-
-app.get('/:roomId', (req, res) => {
-    const { roomId } = req.params;
-    res.render(`room`, { roomId });
-});
+app.set('view engine', 'ejs')
+app.use(express.static('public'))
 
 app.get('/', (req, res) => {
-    res.redirect(`/${uuidv4()}`);
-});
+  res.redirect(`/${uuidV4()}`)
+})
 
-app.listen(8000, () => {
-    console.log('App is listening at port 8000');
-});
+app.get('/:room', (req, res) => {
+  res.render('room', { roomId: req.params.room })
+})
+
+io.on('connection', socket => {
+  socket.on('join-room', (roomId, userId) => {
+    socket.join(roomId)
+    socket.to(roomId).broadcast.emit('user-connected', userId)
+
+    socket.on('disconnect', () => {
+      socket.to(roomId).broadcast.emit('user-disconnected', userId)
+    })
+  })
+})
+
+server.listen(3000, () => {
+    console.log('server is listening at port 3000');
+})
